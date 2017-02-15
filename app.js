@@ -43,12 +43,16 @@ if(appEnv.isLocal) {
   console.log("Running in Cloud");
   var watsonCreds = services['language_translation'][0].credentials;
   var toneCreds = services['tone_analyzer'][0].credentials;
+  var conversationCreds = services['conversation'][0].credentials;
 
   username = watsonCreds.username;
   password = watsonCreds.password;
 
   toneUser = toneCreds.username;
   tonePass = toneCreds.password;
+
+  conversationUser = conversationCreds.username;
+  conversationPass = conversationCreds.password;
 
 }
 
@@ -64,6 +68,12 @@ var tone_analyzer = watson.tone_analyzer({
   password: tonePass,
   version_date: '2016-05-19',
   version: 'v3'
+});
+
+const conversation = new watson.ConversationV1({
+  username: process.env.CONVERSATION_USERNAME || conversationUser,
+  password: process.env.CONVERSATION_PASSWORD || conversationPass,
+  version_date: watson.ConversationV1.VERSION_DATE_2017_02_03
 });
 
 
@@ -198,6 +208,28 @@ io.on('connection', function (socket) {
         }
 	    }
     );
+
+  });
+
+  socket.on('watson', function(data) {
+
+    const payload = {
+      workspace_id: process.env.WORKSPACE_ID || '<workspace_id>',
+      input: {
+          text: data.message
+        }
+      };
+
+    conversation.message(payload, function(err, data) {
+      if (err) {
+
+        console.error(JSON.stringify(err, null, 2));
+      } else {
+        // APPLICATION-SPECIFIC CODE TO PROCESS THE DATA
+        // FROM CONVERSATION SERVICE
+        console.log(JSON.stringify(data, null, 2));
+      }
+    });
 
   });
 

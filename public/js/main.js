@@ -97,7 +97,7 @@ $(function() {
 
         socket.emit('translate', {message: message.substring(18), sourceLang: sourceLang, targetLang: targetLang});
 
-      } 
+      }
 
       //Translate to Italian
       else if(message.substring(0, 18).toLowerCase() == "/translate italian") {
@@ -135,6 +135,14 @@ $(function() {
 
       }
 
+      //Send to Watson conversation
+      if(message.substring(0, 7).toLowerCase() == "/watson") {
+        console.log('sending to Watson');
+
+        socket.emit('watson', {message: message.substring(8)});
+
+      }
+
       //If no translation tag is found
       else /* if(message.substring(0, 10).toLowerCase() != "/translate") */ {
         console.log("not translating");
@@ -146,6 +154,8 @@ $(function() {
   /************************************************************************************************************
                                         End of Translation Handling
   *************************************************************************************************************/
+
+
 
   // Log a message
   function log (message, options) {
@@ -339,7 +349,7 @@ $(function() {
     }
 
     $button.text($(this).text());
-  
+
   });
 
   /*********************************************************************************************************
