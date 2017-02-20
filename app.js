@@ -31,7 +31,9 @@ var appEnv = cfenv.getAppEnv();
 //get services from environment variables
 var services = appEnv.services;
 
+console.log("Begin services");
 console.log(services);
+console.log("End services");
 
 var username = "";
 var password = "";
@@ -41,7 +43,7 @@ if(appEnv.isLocal) {
 } else {
   //If running in the cloud, then we will pull the service credentials from the environment variables
   console.log("Running in Cloud");
-  var watsonCreds = services['language_translation'][0].credentials;
+  var watsonCreds = services['language_translator'][0].credentials;
   var toneCreds = services['tone_analyzer'][0].credentials;
   var conversationCreds = services['conversation'][0].credentials;
 
@@ -53,6 +55,15 @@ if(appEnv.isLocal) {
 
   conversationUser = conversationCreds.username;
   conversationPass = conversationCreds.password;
+
+  console.log("Begin creds:");
+  console.log(username);
+  console.log(password);
+  console.log(toneUser);
+  console.log(tonePass);
+  console.log(conversationUser);
+  console.log(conversationPass);
+  console.log("End creds");
 
 }
 
