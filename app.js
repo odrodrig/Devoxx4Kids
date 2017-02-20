@@ -225,7 +225,7 @@ io.on('connection', function (socket) {
   socket.on('watson', function(data) {
 
     const payload = {
-      workspace_id: process.env.WORKSPACE_ID || '<workspace_id>',
+      workspace_id: '0f9b4f18-81a8-4d46-a4df-7421c959b4be',
       input: {
           text: data.message
         }
@@ -272,26 +272,29 @@ function getTone(data){
 			var topTrait = Math.max.apply(Math,stats);
 			var topTraitPercent = (topTrait *100).toFixed(2)+"%";
 
-			switch(topTrait){
-					case stats[0]:
-						name = tones[0].tone_name;
-						message = "The chat is too volatile. Let's be nice! Anger at "+topTraitPercent;
-						botTalk(message);
-						break;
-					case stats[1]:
-						name = tones[1].tone_name;
-						break;
-					case stats[2]:
-						name = tones[2].tone_name;
-						break;
-					case stats[3]:
-						name = tones[3].tone_name;
-						break;
-					case stats[4]:
-						name = tones[4].tone_name;
-						message = "Cheer up "+socket.username+". Sadness at "+topTraitPercent;
-						botTalk(message);
-						break;
+      if(topTraitPercent != 0.00) {
+
+  			switch(topTrait){
+  					case stats[0]:
+  						name = tones[0].tone_name;
+  						message = "The chat is too volatile. Let's be nice! Anger at "+topTraitPercent;
+  						botTalk(message);
+  						break;
+  					case stats[1]:
+  						name = tones[1].tone_name;
+  						break;
+  					case stats[2]:
+  						name = tones[2].tone_name;
+  						break;
+  					case stats[3]:
+  						name = tones[3].tone_name;
+  						break;
+  					case stats[4]:
+  						name = tones[4].tone_name;
+  						message = "Cheer up "+socket.username+". Sadness at "+topTraitPercent;
+  						botTalk(message);
+  						break;
+        }
 			}
 		}
 	});
