@@ -13,6 +13,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var request = require('request-promise');
 
 //Pull in Watson Developer Cloud library
 var watson = require('watson-developer-cloud');
@@ -67,10 +68,10 @@ if(appEnv.isLocal) {
 
 }
 
-var language_translation = watson.language_translation({
+var language_translation = new watson.LanguageTranslatorV2({
   username: username,
   password: password,
-  version: 'v2'
+  url: 'https://gateway.watsonplatform.net/language-translator/api/'
 });
 
 var tone_analyzer = watson.tone_analyzer({
@@ -222,27 +223,73 @@ io.on('connection', function (socket) {
 
   });
 
+
+
   socket.on('watson', function(data) {
+
+    console.log("Watson socket called");
 
     const payload = {
       workspace_id: '0f9b4f18-81a8-4d46-a4df-7421c959b4be',
-      input: {
-          text: data.message
-        }
+      input: {text: data.message},
+      context: data.context
       };
 
     conversation.message(payload, function(err, data) {
+
       if (err) {
 
         console.error(JSON.stringify(err, null, 2));
       } else {
         // APPLICATION-SPECIFIC CODE TO PROCESS THE DATA
         // FROM CONVERSATION SERVICE
-        console.log(JSON.stringify(data, null, 2));
+        //console.log(JSON.stringify(data, null, 2));
+
+        var pokemon = data.context.pokemon;
+
+        if(data.context.weakness) {
+          console.log(pokemon);
+          getWeakness(pokemon, function(weaknesses) {
+
+            socket.emit('new message', {
+          		username:"Watson",
+          		message: pokemon+" is weak against "+weaknesses,
+              context: context
+          	});
+
+          	socket.broadcast.emit('new message', {
+          		username: "Watson",
+          		message: pokemon+"'s include: "+weaknesses,
+              context: context
+          	});
+          });
+        } else {
+
+          var response = data.output.text[0];
+          var context = data.context;
+
+          socket.emit('new message', {
+        		username:"Watson",
+        		message: response,
+            context: context
+        	});
+
+        	socket.broadcast.emit('new message', {
+        		username: "Watson",
+        		message: response,
+            context: context
+        	});
+        }
       }
     });
 
   });
+
+  //   //requests here
+  //   request('http://pokeapi.co/api/v2/pokemon/'+data.context.pokemon, function(error, response, body) {
+  //
+  //
+  // });
 
   /**********************************************************************************************************
                                          End of Translation Socket
@@ -272,7 +319,7 @@ function getTone(data){
 			var topTrait = Math.max.apply(Math,stats);
 			var topTraitPercent = (topTrait *100).toFixed(2)+"%";
 
-      if(topTraitPercent != 0.00) {
+      if(topTraitPercent != "0.00%") {
 
   			switch(topTrait){
   					case stats[0]:
@@ -301,15 +348,59 @@ function getTone(data){
 
   }
 
+  function getWeakness(pokemon, callback) {
+    request({uri:'http://pokeapi.co/api/v2/pokemon/'+pokemon, json: true})
+
+    .then(function(json) {
+      var types = json.types;
+      var typeEntry = types.slice(-1)[0];
+      var type = typeEntry.type.name;
+
+      return(type);
+    })
+    .then(function(type) {
+      request({uri: 'http://pokeapi.co/api/v2/type/'+type, json: true})
+       .then(function(json) {
+
+          var doubleDamage = json.damage_relations.double_damage_from;
+          var weaknesses = "";
+
+          for(var i = 0; i<doubleDamage.length; i++) {
+
+              weaknesses += doubleDamage[i].name;
+              weaknesses += ", "
+
+          }
+          callback(weaknesses);
+        })
+    })
+    .catch(function(error) {
+      console.log(error);
+
+      socket.emit('new message', {
+        username:"Watson",
+        message: "That pokemon was not found. Try again.",
+      });
+
+      socket.broadcast.emit('new message', {
+        username: "Watson",
+        message: "That pokemon was not found. Try again.",
+      });
+
+    });
+  }
+
   function botTalk(message){
 	socket.emit('new message', {
 		username:"SockBot",
-		message: message
+		message: message,
+    context: {}
 	});
 
 	socket.broadcast.emit('new message', {
 		username: "SockBot",
-		message: message
+		message: message,
+    context: {}
 	});
 }
 

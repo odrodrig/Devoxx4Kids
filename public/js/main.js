@@ -30,6 +30,8 @@ $(function() {
   var sourceLang = "en";
   var targetLang = "es";
 
+  var context = {};
+
   var socket = io();
 
   function addParticipantsMessage (data) {
@@ -139,7 +141,7 @@ $(function() {
       if(message.substring(0, 7).toLowerCase() == "/watson") {
         console.log('sending to Watson');
 
-        socket.emit('watson', {message: message.substring(8)});
+        socket.emit('watson', {message: message.substring(8), context: context});
 
       }
 
@@ -372,6 +374,7 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', function (data) {
     addChatMessage(data);
+    context = data.context;
     console.log(data);
   });
 
