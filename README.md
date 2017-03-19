@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Blue Socks Chat application is a chat application using Socket.io, IBM Bluemix, Watson Language Translation, and Watson Tone Analyzer. Using this application, we will build your very own chatroom to chat with friends. Using the Watson Language Translation, we will be able to do translations on the fly with a simple command. Also, while you chat there is a chat bot named "sockBot" who will use the Watson Tone Analyzer service to analyze they chat messages. The bot will then alert the users if the the messages are either angry or sad.
+The My Buddy Watson application is a chat application using Socket.io, IBM Bluemix, Watson Language Translation, Watson Tone Analyzer, and Watson Conversation. Using this application, we will build your very own chatroom to chat with friends. Using the Watson Language Translation, we will be able to do translations on the fly with a simple command. Also, while you chat there is a chat bot named "sockBot" who will use the Watson Tone Analyzer service to analyze the chat messages. The bot will then alert the users if the messages are either angry or sad. With the power of Watson Conversation we can create an intelligent chat bot and train it to respond to certain commands. In this case, Watson will be able to tell jokes and help us out in Pokemon battles.
 
 
 
