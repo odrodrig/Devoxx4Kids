@@ -221,7 +221,7 @@ io.on('connection', function (socket) {
     console.log("Watson socket called");
 
     const payload = {
-      workspace_id: '0f9b4f18-81a8-4d46-a4df-7421c959b4be',
+      workspace_id: '0c2abff5-1b8a-4cfe-ae4c-4f29d4516f9a',
       input: {text: data.message},
       context: context
       };
