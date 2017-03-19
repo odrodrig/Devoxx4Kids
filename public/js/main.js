@@ -138,10 +138,14 @@ $(function() {
       }
 
       //Send to Watson conversation
-      if(message.substring(0, 7).toLowerCase() == "/watson") {
+      else if(message.substring(0, 7).toLowerCase() == "/watson") {
         console.log('sending to Watson');
 
-        socket.emit('watson', {message: message.substring(8), context: context});
+        socket.emit('new message', {message: message});
+
+        // socket.emit('watson', {message: message.substring(8), context: context});
+        socket.emit('watson', {message: message.substring(8)});
+
 
       }
 
@@ -150,6 +154,7 @@ $(function() {
         console.log("not translating");
         socket.emit('new message', {message: message});
       }
+
     }
   }
 
@@ -374,7 +379,8 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', function (data) {
     addChatMessage(data);
-    context = data.context;
+    // console.log(data.context);
+    // context = data.context;
     console.log(data);
   });
 

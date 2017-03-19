@@ -32,10 +32,6 @@ var appEnv = cfenv.getAppEnv();
 //get services from environment variables
 var services = appEnv.services;
 
-console.log("Begin services");
-console.log(services);
-console.log("End services");
-
 var username = "";
 var password = "";
 
@@ -44,9 +40,9 @@ if(appEnv.isLocal) {
 } else {
   //If running in the cloud, then we will pull the service credentials from the environment variables
   console.log("Running in Cloud");
-  var watsonCreds = services['language_translator'][0].credentials;
-  var toneCreds = services['tone_analyzer'][0].credentials;
-  var conversationCreds = services['conversation'][0].credentials;
+  const watsonCreds = services['language_translator'][0].credentials;
+  const toneCreds = services['tone_analyzer'][0].credentials;
+  const conversationCreds = services['conversation'][0].credentials;
 
   username = watsonCreds.username;
   password = watsonCreds.password;
@@ -57,24 +53,15 @@ if(appEnv.isLocal) {
   conversationUser = conversationCreds.username;
   conversationPass = conversationCreds.password;
 
-  console.log("Begin creds:");
-  console.log(username);
-  console.log(password);
-  console.log(toneUser);
-  console.log(tonePass);
-  console.log(conversationUser);
-  console.log(conversationPass);
-  console.log("End creds");
-
 }
 
-var language_translation = new watson.LanguageTranslatorV2({
+const language_translation = new watson.LanguageTranslatorV2({
   username: username,
   password: password,
   url: 'https://gateway.watsonplatform.net/language-translator/api/'
 });
 
-var tone_analyzer = watson.tone_analyzer({
+const tone_analyzer = watson.tone_analyzer({
   url: 'https://gateway.watsonplatform.net/tone-analyzer/api/',
   username: toneUser,
   password: tonePass,
@@ -87,7 +74,6 @@ const conversation = new watson.ConversationV1({
   password: process.env.CONVERSATION_PASSWORD || conversationPass,
   version_date: watson.ConversationV1.VERSION_DATE_2017_02_03
 });
-
 
 /*********************************************************************************************************
                                         End of Parsing Service Credentials
@@ -104,6 +90,7 @@ http.listen(appEnv.port, function(){
 
 var numUsers = 0;
 var chatHistory= [];
+var context = {};
 
 io.on('connection', function (socket) {
   var addedUser = false;
@@ -182,7 +169,6 @@ io.on('connection', function (socket) {
   	console.log(data.message);
   	console.log(data.sourceLang);
   	console.log(data.targetLang);
-  	getTone(data.message);
 
 
   	language_translation.translate({
@@ -223,7 +209,12 @@ io.on('connection', function (socket) {
 
   });
 
-
+  /**********************************************************************************************************
+                                         End of Translation Socket
+  ***********************************************************************************************************/
+  /**********************************************************************************************************
+                                         Watson Socket
+  ***********************************************************************************************************/
 
   socket.on('watson', function(data) {
 
@@ -232,10 +223,14 @@ io.on('connection', function (socket) {
     const payload = {
       workspace_id: '0f9b4f18-81a8-4d46-a4df-7421c959b4be',
       input: {text: data.message},
-      context: data.context
+      context: context
       };
 
     conversation.message(payload, function(err, data) {
+
+      context = data.context;
+
+      console.log(data);
 
       if (err) {
 
@@ -245,39 +240,36 @@ io.on('connection', function (socket) {
         // FROM CONVERSATION SERVICE
         //console.log(JSON.stringify(data, null, 2));
 
-        var pokemon = data.context.pokemon;
 
-        if(data.context.weakness) {
+
+        if(context.weakness) {
+          var pokemon = context.pokemon;
           console.log(pokemon);
+          context = {};
           getWeakness(pokemon, function(weaknesses) {
 
             socket.emit('new message', {
           		username:"Watson",
-          		message: pokemon+" is weak against "+weaknesses,
-              context: context
+          		message: pokemon+"'s weaknesses include: "+weaknesses
           	});
 
           	socket.broadcast.emit('new message', {
           		username: "Watson",
-          		message: pokemon+"'s include: "+weaknesses,
-              context: context
+          		message: pokemon+"'s weaknesses include: "+weaknesses
           	});
           });
         } else {
 
           var response = data.output.text[0];
-          var context = data.context;
 
           socket.emit('new message', {
         		username:"Watson",
-        		message: response,
-            context: context
+        		message: response
         	});
 
         	socket.broadcast.emit('new message', {
         		username: "Watson",
-        		message: response,
-            context: context
+        		message: response
         	});
         }
       }
@@ -285,15 +277,10 @@ io.on('connection', function (socket) {
 
   });
 
-  //   //requests here
-  //   request('http://pokeapi.co/api/v2/pokemon/'+data.context.pokemon, function(error, response, body) {
-  //
-  //
-  // });
-
   /**********************************************************************************************************
-                                         End of Translation Socket
+                                         End of Watson Socket
   ***********************************************************************************************************/
+
 function getTone(data){
 	var tones;
 	var message;
@@ -317,14 +304,14 @@ function getTone(data){
 			}
 
 			var topTrait = Math.max.apply(Math,stats);
-			var topTraitPercent = (topTrait *100).toFixed(2)+"%";
+			var topTraitPercent = (topTrait *100).toFixed(2);
 
-      if(topTraitPercent != "0.00%") {
+      if(topTraitPercent > 60.00) {
 
   			switch(topTrait){
   					case stats[0]:
   						name = tones[0].tone_name;
-  						message = "The chat is too volatile. Let's be nice! Anger at "+topTraitPercent;
+  						message = "The chat is too volatile. Let's be nice! Anger at "+topTraitPercent+"%";
   						botTalk(message);
   						break;
   					case stats[1]:
@@ -338,7 +325,7 @@ function getTone(data){
   						break;
   					case stats[4]:
   						name = tones[4].tone_name;
-  						message = "Cheer up "+socket.username+". Sadness at "+topTraitPercent;
+  						message = "Cheer up "+socket.username+". Sadness at "+topTraitPercent+"%";
   						botTalk(message);
   						break;
         }
@@ -394,13 +381,11 @@ function getTone(data){
 	socket.emit('new message', {
 		username:"SockBot",
 		message: message,
-    context: {}
 	});
 
 	socket.broadcast.emit('new message', {
 		username: "SockBot",
 		message: message,
-    context: {}
 	});
 }
 
